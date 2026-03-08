@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #06090f;
+  --bg-elevated: #0d1320;
+  --surface: #101a2b;
+  --surface-soft: #142139;
+  --border: #243558;
+  --text: #e8f2ff;
+  --text-muted: #8ea3c7;
+  --accent: #2dc1ff;
+  --accent-strong: #14e0a0;
+  --danger: #ff5b7c;
+  --shadow: 0 20px 45px rgba(0, 0, 0, 0.38);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(45, 193, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 82% 22%, rgba(20, 224, 160, 0.13), transparent 26%),
+    linear-gradient(180deg, #070b13 0%, #04070d 100%);
+  background-attachment: fixed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.page-shell {
+  width: min(1260px, 96vw);
+  margin: 0 auto;
+  padding: 1rem 0 2rem;
+}
+
+.card {
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(20, 33, 57, 0.85), rgba(13, 19, 32, 0.95));
+  box-shadow: var(--shadow);
+  border-radius: 16px;
+}
+
+.btn {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 0.62rem 1rem;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #03131f;
+  font-weight: 700;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.62rem 0.75rem;
+  background: #091223;
+  color: var(--text);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 320ms ease both;
+}
+
+@media (max-width: 900px) {
+  .page-shell {
+    width: min(1240px, 94vw);
+  }
+}

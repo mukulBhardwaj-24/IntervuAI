@@ -1,0 +1,205 @@
+.interview-room {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ir-topbar {
+  padding: 0.65rem 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ir-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.ir-brand-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.ir-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ir-badge {
+  border: 1px solid var(--border);
+  background: rgba(20, 33, 57, 0.9);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+}
+
+.ir-badge.is-live {
+  color: var(--accent-strong);
+}
+
+.ir-main-grid {
+  display: grid;
+  grid-template-columns: 300px minmax(620px, 1fr) 320px;
+  gap: 0.75rem;
+  min-height: 72vh;
+}
+
+.ir-problem-pane {
+  padding: 0.75rem;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 0.65rem;
+}
+
+.ir-pane-title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.ir-problem-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(9, 18, 35, 0.7);
+  padding: 0.55rem;
+}
+
+.ir-problem-card p {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.ir-code-pane {
+  padding: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.ir-code-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.7rem;
+  background: linear-gradient(180deg, rgba(9, 18, 35, 0.95), rgba(9, 18, 35, 0.75));
+}
+
+.ir-tab-list {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.ir-tab {
+  border: 1px solid var(--border);
+  background: rgba(20, 33, 57, 0.65);
+  color: var(--text-muted);
+  border-radius: 7px;
+  padding: 0.22rem 0.5rem;
+  font-size: 0.74rem;
+}
+
+.ir-tab.is-active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(45, 193, 255, 0.08);
+}
+
+.ir-code-toolbar {
+  border-bottom: 1px solid var(--border);
+  padding: 0.45rem 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ir-select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(9, 18, 35, 0.95);
+  color: var(--text);
+  padding: 0.26rem 0.5rem;
+}
+
+.ir-editor {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  width: 100%;
+  min-height: 430px;
+  resize: vertical;
+  background: linear-gradient(180deg, #091224, #07101f);
+  color: #b9ddff;
+  padding: 0.85rem;
+}
+
+.ir-action-row {
+  padding: 0.5rem 0.7rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.ir-side-pane {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.ir-test-panel {
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ir-mini-tabs {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.ir-case {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(9, 18, 35, 0.85);
+  padding: 0.5rem;
+}
+
+.ir-case-header {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+
+.ir-chat-panel {
+  padding: 0.75rem;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 0.55rem;
+  min-height: 220px;
+}
+
+.ir-chat-stream {
+  overflow-y: auto;
+  max-height: 220px;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ir-chat-item {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0.46rem;
+  background: rgba(45, 193, 255, 0.08);
+}
+
+.ir-chat-input-row {
+  display: flex;
+  gap: 0.45rem;
+}
