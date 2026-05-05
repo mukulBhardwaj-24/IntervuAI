@@ -133,7 +133,7 @@ export default function Dashboard() {
           <ul className="muted" style={{ margin: 0, paddingLeft: '1rem', lineHeight: 1.8 }}>
             <li>Strong in arrays and binary search</li>
             <li>Need faster explanation for dynamic programming</li>
-            <li>Schedule 2 mock interviews this week</li>
+            <li>Book 2 practice interview sessions this week</li>
           </ul>
         </article>
 

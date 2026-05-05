@@ -32,7 +32,7 @@ export default function Login() {
       <form className="card fade-up" onSubmit={handleSubmit} style={{ padding: '1.2rem' }}>
         <h1 style={{ marginTop: 0, fontSize: '1.6rem' }}>Welcome Back</h1>
         <p className="muted" style={{ marginTop: 0 }}>
-          Login with email/password. Session is handled via cookies.
+          Sign in to continue to your dashboard and practice area.
         </p>
 
         <label className="muted" htmlFor="login-email">

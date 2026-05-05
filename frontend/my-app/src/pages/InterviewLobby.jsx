@@ -100,7 +100,7 @@ export default function InterviewLobby() {
       <div className="card" style={{ padding: '1rem' }}>
         <h1 style={{ marginTop: 0 }}>Interview Lobby</h1>
         <p className="muted" style={{ marginTop: 0 }}>
-          Create a room for your mock interview or join using a shared room id.
+          Create a room or join an existing one to start your interview practice.
         </p>
 
         <label className="muted" htmlFor="lobby-name">
@@ -118,7 +118,7 @@ export default function InterviewLobby() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.75rem' }}>
           <article className="card" style={{ padding: '0.8rem', borderRadius: '12px' }}>
             <h3 style={{ marginTop: 0 }}>Create Room</h3>
-            <p className="muted">Generate a live room ID from backend and enter instantly.</p>
+            <p className="muted">Create a new room and invite another person to join.</p>
             <button className="btn btn-primary" disabled={loading} onClick={handleCreate} type="button">
               {loading ? 'Creating...' : 'Create and Enter'}
             </button>

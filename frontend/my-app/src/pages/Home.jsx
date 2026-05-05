@@ -19,8 +19,7 @@ export default function Home() {
           One platform for coding rounds, collaborative interviews, and AI guidance.
         </h1>
         <p className="muted" style={{ lineHeight: 1.7 }}>
-          Your MVP includes problem practice, interview lobby, shared room layout, and JWT-cookie auth flow.
-          Backend endpoints can be connected later without changing page-level UX.
+          Practice problems, join interview rooms, code with your partner, and get helpful AI guidance in one place.
         </p>
         <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem', flexWrap: 'wrap' }}>
           <Link className="btn btn-primary" to="/register">
@@ -36,13 +35,13 @@ export default function Home() {
       </article>
 
       <article className="card" style={{ padding: '1rem' }}>
-        <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>MVP Scope</h2>
+        <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>What You Can Do</h2>
         <ul className="muted" style={{ margin: 0, paddingLeft: '1rem', lineHeight: 1.8 }}>
-          <li>Cookie-first auth state with protected routes</li>
-          <li>Problem bank with filters and code panel</li>
-          <li>Interview lobby with create/join flow</li>
-          <li>Integrated room layout for video + coding + chat</li>
-          <li>Mocked APIs for fast frontend iteration</li>
+          <li>Browse and search practice problems</li>
+          <li>Open a coding workspace for each problem</li>
+          <li>Create or join an interview room</li>
+          <li>Use video, chat, and shared code together</li>
+          <li>Get hints and code feedback when needed</li>
         </ul>
       </article>
     </section>

@@ -35,7 +35,7 @@ export default function Register() {
       <form className="card fade-up" onSubmit={handleSubmit} style={{ padding: '1.2rem' }}>
         <h1 style={{ marginTop: 0, fontSize: '1.6rem' }}>Create Account</h1>
         <p className="muted" style={{ marginTop: 0 }}>
-          Start with MVP setup now, connect real JWT cookie auth backend later.
+          Create your account to save progress and join interview rooms.
         </p>
 
         <label className="muted" htmlFor="register-name">

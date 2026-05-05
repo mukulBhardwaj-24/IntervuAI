@@ -312,7 +312,7 @@ export default function InterviewRoom() {
 
     const onConnectError = () => {
       setConnectionState('Connection error');
-      setRoomError('Socket connection failed. Check backend server.');
+      setRoomError('Connection failed. Please try again.');
     };
 
     const onDisconnect = () => {
