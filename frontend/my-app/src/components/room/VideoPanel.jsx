@@ -8,6 +8,7 @@ export default function VideoPanel({
   onStartVideo,
   onToggleMic,
   onToggleCam
+  ,onShareScreen, isScreenSharing
 }) {
   return (
     <section className="card" style={{ padding: '0.7rem', display: 'grid', gap: '0.5rem' }}>
@@ -60,7 +61,7 @@ export default function VideoPanel({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.35rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.35rem' }}>
         <button className="btn" onClick={onStartVideo} style={{ padding: '0.42rem' }} type="button">
           {isVideoStarted ? 'Live' : 'Start'}
         </button>
@@ -70,7 +71,10 @@ export default function VideoPanel({
         <button className="btn" onClick={onToggleCam} style={{ padding: '0.42rem' }} type="button">
           {isCamEnabled ? 'Cam On' : 'Cam Off'}
         </button>
-        <button className="btn" style={{ padding: '0.42rem' }} type="button">Tag</button>
+        <button className="btn" onClick={onShareScreen} style={{ padding: '0.42rem' }} type="button">
+          {isScreenSharing ? 'Stop Share' : 'Share Screen'}
+        </button>
+        <button className="btn" style={{ padding: '0.42rem' }} type="button">Record</button>
       </div>
     </section>
   );

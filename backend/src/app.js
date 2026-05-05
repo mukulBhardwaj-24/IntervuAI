@@ -2,6 +2,11 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import roomRoutes from './routes/roomRoutes.js';
+import runRoutes from './routes/runRoutes.js';
+import submissionRoutes from './routes/submissionRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
+import recordingRoutes from './routes/recordingRoutes.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 
 export function createApp(frontendUrl) {
@@ -22,6 +27,11 @@ export function createApp(frontendUrl) {
   });
 
   app.use('/api/rooms', roomRoutes);
+  app.use('/api/run', runRoutes);
+  app.use('/api/submissions', submissionRoutes);
+  app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/ai', aiRoutes);
+  app.use('/api/recordings', recordingRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

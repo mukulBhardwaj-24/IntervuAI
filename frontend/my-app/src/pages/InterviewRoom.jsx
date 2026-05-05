@@ -4,6 +4,7 @@ import ProblemList from '../components/problems/ProblemList';
 import VideoPanel from '../components/room/VideoPanel';
 import { getRoom } from '../services/roomService';
 import { createSocketClient } from '../services/socketClient';
+import { runCode } from '../services/runService';
 import { aiChecklist, problems } from '../utils/mockData';
 import './InterviewRoom.css';
 
@@ -67,11 +68,20 @@ export default function InterviewRoom() {
   const [isVideoStarted, setIsVideoStarted] = useState(false);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isCamEnabled, setIsCamEnabled] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+
+  const [runResult, setRunResult] = useState(null);
+  const [runError, setRunError] = useState(null);
+  const [isRunLoading, setIsRunLoading] = useState(false);
 
   const socketRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const localStreamRef = useRef(null);
+  const screenStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
   const peerConnectionRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
   const isVideoStartedRef = useRef(false);
@@ -90,6 +100,33 @@ export default function InterviewRoom() {
 
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
+    }
+  }
+
+  async function restoreCameraTrack() {
+    try {
+      const pc = peerConnectionRef.current;
+      if (!pc) return;
+
+      const cameraTrack = localStreamRef.current?.getVideoTracks()?.[0];
+      if (!cameraTrack) return;
+
+      const videoSender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+      if (videoSender) {
+        await videoSender.replaceTrack(cameraTrack);
+      }
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+      }
+
+      setIsScreenSharing(false);
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach((t) => t.stop());
+        screenStreamRef.current = null;
+      }
+    } catch {
+      // swallow errors
     }
   }
 
@@ -450,6 +487,21 @@ export default function InterviewRoom() {
     setDraft('');
   }
 
+  async function handleRunCode() {
+    setIsRunLoading(true);
+    setRunError(null);
+    setRunResult(null);
+
+    try {
+      const res = await runCode(language, code, '', selected?.id);
+      setRunResult(res);
+    } catch (err) {
+      setRunError(err.message || 'Failed to run code');
+    } finally {
+      setIsRunLoading(false);
+    }
+  }
+
   async function handleStartVideo() {
     try {
       await ensureLocalStream();
@@ -459,6 +511,100 @@ export default function InterviewRoom() {
       }
     } catch (error) {
       setRoomError(error.message || 'Could not start camera/microphone');
+    }
+  }
+
+  async function handleShareScreen() {
+    try {
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        throw new Error('Screen sharing is not supported in this browser');
+      }
+
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenTrack = displayStream.getVideoTracks()[0];
+
+      // show local preview of shared screen
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = displayStream;
+      }
+
+      screenStreamRef.current = displayStream;
+      setIsScreenSharing(true);
+
+      const pc = createPeerConnection();
+      if (!pc) return;
+
+      const videoSender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+      if (videoSender) {
+        await videoSender.replaceTrack(screenTrack);
+      } else {
+        pc.addTrack(screenTrack, displayStream);
+      }
+
+      // when user stops sharing, restore camera
+      screenTrack.onended = () => {
+        restoreCameraTrack();
+      };
+    } catch (error) {
+      setRoomError(error.message || 'Could not start screen sharing');
+    }
+  }
+
+  async function handleStartRecording() {
+    try {
+      if (isRecording) return;
+
+      // prefer screen if sharing, else camera+mic
+      const stream = screenStreamRef.current || localStreamRef.current;
+      if (!stream) {
+        throw new Error('No local media to record');
+      }
+
+      recordedChunksRef.current = [];
+      const options = { mimeType: 'video/webm; codecs=vp9' };
+      const mr = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = mr;
+
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+
+      mr.onstop = async () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        // create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `recording-${Date.now()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+
+        // upload to backend
+        try {
+          const form = new FormData();
+          form.append('recording', blob, `recording-${Date.now()}.webm`);
+          await fetch('/api/recordings/upload', { method: 'POST', body: form });
+        } catch {
+          // ignore upload errors for prototype
+        }
+      };
+
+      mr.start(1000);
+      setIsRecording(true);
+    } catch (err) {
+      setRoomError(err.message || 'Could not start recording');
+    }
+  }
+
+  function handleStopRecording() {
+    try {
+      if (!mediaRecorderRef.current) return;
+      mediaRecorderRef.current.stop();
+    } finally {
+      mediaRecorderRef.current = null;
+      setIsRecording(false);
     }
   }
 
@@ -565,31 +711,87 @@ export default function InterviewRoom() {
           </div>
 
           <div className="ir-action-row">
-            <button className="btn btn-primary" type="button">Run Code</button>
-            <button className="btn" type="button">Run Tests</button>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleRunCode}
+              disabled={isRunLoading}
+              type="button"
+              style={{ opacity: isRunLoading ? 0.6 : 1, cursor: isRunLoading ? 'not-allowed' : 'pointer' }}
+            >
+              {isRunLoading ? '⏳ Running...' : '▶ Run Code'}
+            </button>
+            <button 
+              className="btn" 
+              type="button"
+              disabled={isRunLoading}
+              style={{ opacity: isRunLoading ? 0.6 : 1, cursor: isRunLoading ? 'not-allowed' : 'pointer' }}
+            >
+              Run Tests
+            </button>
           </div>
         </main>
 
         <aside className="ir-side-pane">
           <section className="card ir-test-panel">
             <div className="ir-mini-tabs">
-              <span className="ir-tab is-active">Input/Output</span>
-              <span className="ir-tab">Test Cases</span>
-              <span className="ir-tab">Room History</span>
+              <span className="ir-tab is-active">Output</span>
+              <span className="ir-tab">History</span>
             </div>
 
-            <div className="ir-case">
-              <p className="ir-case-header">
-                <span>Test Case 0</span>
-                <span className="muted">pending</span>
-              </p>
-            </div>
-            <div className="ir-case">
-              <p className="ir-case-header">
-                <span>Test Case 1</span>
-                <span style={{ color: 'var(--accent-strong)' }}>passed</span>
-              </p>
-            </div>
+            {runError && (
+              <div className="ir-case" style={{ borderLeft: '4px solid #ef4444' }}>
+                <p className="ir-case-header">
+                  <span style={{ color: '#ef4444' }}>❌ Error</span>
+                </p>
+                <p className="mono muted" style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {runError}
+                </p>
+              </div>
+            )}
+
+            {runResult && (
+              <>
+                <div className="ir-case" style={{ borderLeft: `4px solid ${runResult.result?.status?.id === 3 ? '#4ade80' : '#fbbf24'}` }}>
+                  <p className="ir-case-header">
+                    <span>{runResult.result?.status?.description || 'Result'}</span>
+                    <span style={{ 
+                      color: runResult.result?.status?.id === 3 ? '#4ade80' : runResult.result?.status?.id === 4 ? '#ef4444' : '#fbbf24',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {runResult.result?.time ? `${runResult.result.time}s` : '—'}
+                    </span>
+                  </p>
+                  {runResult.result?.stdout && (
+                    <p className="mono" style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#b9ddff', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '4rem', overflow: 'auto' }}>
+                      {runResult.result.stdout}
+                    </p>
+                  )}
+                  {runResult.result?.stderr && (
+                    <p className="mono" style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '2rem', overflow: 'auto' }}>
+                      stderr: {runResult.result.stderr}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {!runError && !runResult && (
+              <>
+                <div className="ir-case">
+                  <p className="ir-case-header">
+                    <span>Test Case 0</span>
+                    <span className="muted">pending</span>
+                  </p>
+                </div>
+                <div className="ir-case">
+                  <p className="ir-case-header">
+                    <span>Test Case 1</span>
+                    <span style={{ color: 'var(--accent-strong)' }}>pending</span>
+                  </p>
+                </div>
+              </>
+            )}
           </section>
 
           <VideoPanel
@@ -602,7 +804,17 @@ export default function InterviewRoom() {
             onToggleMic={handleToggleMic}
             peerState={peerState}
             remoteVideoRef={remoteVideoRef}
-          />
+            onShareScreen={handleShareScreen}
+            isScreenSharing={isScreenSharing}
+            />
+
+          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.4rem' }}>
+            {!isRecording ? (
+              <button className="btn" onClick={handleStartRecording} type="button">Start Recording</button>
+            ) : (
+              <button className="btn btn-danger" onClick={handleStopRecording} type="button">Stop Recording</button>
+            )}
+          </div>
 
           <section className="card ir-chat-panel">
             <div className="ir-chat-stream">

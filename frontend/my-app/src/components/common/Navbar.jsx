@@ -30,7 +30,7 @@ export default function Navbar() {
       }}
     >
       <Link className="mono" style={{ fontWeight: 700, letterSpacing: '0.02em' }} to="/">
-        InterviewForge
+        IntervuAI
       </Link>
 
       <nav style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

@@ -1,10 +1,12 @@
 # Dependencies
 **/node_modules/
+**/package-lock.json
 
 # Build outputs
 **/dist/
 **/build/
 **/coverage/
+**/out/
 
 # Logs
 **/logs/
@@ -16,7 +18,12 @@ pnpm-debug.log*
 
 # OS / editor files
 .DS_Store
+.DS_Store?
 Thumbs.db
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 **/.idea/
 **/.vscode/*
 !.vscode/extensions.json
@@ -24,8 +31,9 @@ Thumbs.db
 # Temporary files
 **/*.tmp
 **/*.temp
+**/uploads/
+**/.cache/
 
-# User requested: ignore only the outermost README
-/README.md
-
-# Intentionally NOT ignoring .env files
+# Environment files - DO NOT IGNORE
+# .env files ARE tracked in this repo for easy setup
+# Never commit secrets - use separate secure storage for production keys
