@@ -1,4 +1,26 @@
 import fetch from 'node-fetch';
+import OpenAI from 'openai';
+import rateLimit from 'express-rate-limit';
+
+let openai = null;
+
+function getOpenaiClient() {
+  if (!openai) {
+    openai = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: "https://api.groq.com/openai/v1" });
+  }
+  return openai;
+}
+
+export const aiChatRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many requests. Please try again in 15 minutes.'
+  }
+});
 
 function mockHint(problemId, code) {
   return `Hint for ${problemId || 'this problem'}: Try simplifying the problem, consider edge cases, and check input constraints. (mock)`;
@@ -72,6 +94,45 @@ export async function getReview(req, res, next) {
     const review = body?.choices?.[0]?.message?.content || mockReview();
 
     return res.json({ review, model: body?.model || process.env.OPENAI_MODEL || 'unknown' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function postAiChat(req, res, next) {
+  try {
+    const { roomId, code, userMessage } = req.body || {};
+
+    if (!roomId || typeof roomId !== 'string') {
+      return res.status(400).json({ success: false, message: 'roomId is required' });
+    }
+
+    if (typeof code !== 'string') {
+      return res.status(400).json({ success: false, message: 'code must be a string' });
+    }
+
+    if (!userMessage || typeof userMessage !== 'string') {
+      return res.status(400).json({ success: false, message: 'userMessage is required' });
+    }
+
+    const completion = await getOpenaiClient().chat.completions.create({
+      model: 'llama3-70b-8192',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a supportive technical interviewer. Review the provided code, respond to the user\'s question, and keep the tone constructive, concise, and interview-focused.'
+        },
+        {
+          role: 'user',
+          content: `Room ID: ${roomId}\n\nCode:\n${code}\n\nUser message:\n${userMessage}`
+        }
+      ]
+    });
+
+    const aiResponse = completion?.choices?.[0]?.message?.content?.trim() || '';
+
+    return res.json({ success: true, aiResponse });
   } catch (error) {
     return next(error);
   }
