@@ -637,163 +637,77 @@ export default function InterviewRoom() {
   }
 
   return (
-    <section className="fade-up interview-room">
-      <header className="card ir-topbar">
-        <div className="ir-brand">
-          <h1 className="mono ir-brand-title">Interview Prep System</h1>
-          <span className="ir-badge">Room {roomId}</span>
-          <span className={`ir-badge ${connectionState === 'Connected' ? 'is-live' : ''}`}>
-            {connectionState}
-          </span>
+    <div className="ir-container">
+      
+
+      <div className="ir-session-bar">
+  
+        <div className="ir-session-right">
+          <span>Room ID: {roomId}</span>
+          <span className={`ir-status ${connectionState === 'Connected' ? 'connected' : ''}`}>Status: {connectionState}</span>
+          <span>User: {identity.userName}</span>
+          <button onClick={handleLeaveRoom} className="btn btn-exit">Exit</button>
         </div>
+      </div>
 
-        <div className="ir-badge-row">
-          <span className="ir-badge">You: {identity.userName}</span>
-          <span className="ir-badge">{participants.length}/2 in room</span>
-          <button className="btn" onClick={handleLeaveRoom} type="button">EXIT</button>
-        </div>
-      </header>
+      {roomError && <div className="ir-error-msg">{roomError}</div>}
 
-      {roomError && (
-        <p style={{ color: 'var(--danger)', margin: 0 }}>
-          {roomError}
-        </p>
-      )}
+      <main className="ir-workspace">
+        {/* LEFT COLUMN: PROBLEM CONTEXT */}
+        <aside className="ir-left">
+          <h3 className="ir-prob-title truncate">{selected.title}</h3>
+          <p className="ir-prob-meta">{selected.difficulty} • {selected.tags.join(' • ')}</p>
 
-      <div className="ir-main-grid">
-        <aside className="card ir-problem-pane">
-          <h3 className="ir-pane-title">{selected.title}</h3>
-          <p className="mono muted" style={{ margin: 0, fontSize: '0.75rem' }}>
-            {selected.difficulty} | {selected.tags.join(' | ')}
-          </p>
+          <div className="ir-scroll-area">
+            <section className="ir-section">
+              <h4>Problem Statement</h4>
+              <p>{selected.statement}</p>
+            </section>
 
-          <div className="ir-problem-card">
-            <p className="mono muted" style={{ margin: 0 }}>Statement</p>
-            <p className="muted">{selected.statement}</p>
+            <section className="ir-section">
+              <h4>Sample Input</h4>
+              <pre className="mono">{selected.sampleInput}</pre>
+              <h4>Sample Output</h4>
+              <pre className="mono">{selected.sampleOutput}</pre>
+            </section>
+
+            <section className="ir-section">
+              <h4>All Problems</h4>
+              <ProblemList items={problems} onSelect={setSelected} selectedId={selected.id} />
+            </section>
           </div>
-
-          <div className="ir-problem-card">
-            <p className="mono muted" style={{ margin: 0 }}>Sample Input</p>
-            <p className="mono">{selected.sampleInput}</p>
-            <p className="mono muted" style={{ marginTop: '0.5rem' }}>Sample Output</p>
-            <p className="mono">{selected.sampleOutput}</p>
-          </div>
-
-          <h4 className="ir-pane-title" style={{ marginTop: '0.2rem' }}>Problem Picker</h4>
-          <ProblemList items={problems} onSelect={setSelected} selectedId={selected.id} />
         </aside>
 
-        <main className="card ir-code-pane">
-          <div className="ir-code-tabs">
-            <div className="ir-tab-list">
-              <span className="ir-tab is-active">Coding 1</span>
-              <span className="ir-tab">Coding 2</span>
-              <span className="ir-tab">+</span>
-            </div>
-          </div>
-
-          <div className="ir-code-toolbar">
-            <select className="ir-select mono" onChange={(event) => setLanguage(event.target.value)} value={language}>
+        {/* CENTER COLUMN: CODE EDITOR */}
+        <section className="ir-center">
+          <div className="ir-editor-header">
+            <select className="ir-select" onChange={(e) => setLanguage(e.target.value)} value={language}>
               <option value="python">Python</option>
               <option value="javascript">JavaScript</option>
               <option value="cpp">C++</option>
               <option value="java">Java</option>
             </select>
-            <span className="mono muted" style={{ fontSize: '0.78rem' }}>Shared editor sync is live</span>
+            <span className="ir-live-status">Live Sync</span>
+            <span className="ir-peer-status">{peerState}</span>
           </div>
 
-          <div style={{ padding: '0.2rem 0.2rem 0 0.2rem' }}>
-            <textarea
-              className="mono ir-editor"
-              onChange={(event) => handleCodeChange(event.target.value)}
-              value={code}
-            />
-          </div>
+          <textarea
+            className="ir-editor"
+            value={code}
+            onChange={(e) => handleCodeChange(e.target.value)}
+            spellCheck="false"
+          />
 
-          <div className="ir-action-row">
-            <button 
-              className="btn btn-primary" 
-              onClick={handleRunCode}
-              disabled={isRunLoading}
-              type="button"
-              style={{ opacity: isRunLoading ? 0.6 : 1, cursor: isRunLoading ? 'not-allowed' : 'pointer' }}
-            >
-              {isRunLoading ? '⏳ Running...' : '▶ Run Code'}
+          <div className="ir-editor-footer">
+            <button className="btn" type="button" onClick={handleRunCode} disabled={isRunLoading}>
+              {isRunLoading ? 'Running…' : 'Run'}
             </button>
-            <button 
-              className="btn" 
-              type="button"
-              disabled={isRunLoading}
-              style={{ opacity: isRunLoading ? 0.6 : 1, cursor: isRunLoading ? 'not-allowed' : 'pointer' }}
-            >
-              Run Tests
-            </button>
+            <button className="btn btn-primary" type="button">Submit</button>
           </div>
-        </main>
+        </section>
 
-        <aside className="ir-side-pane">
-          <section className="card ir-test-panel">
-            <div className="ir-mini-tabs">
-              <span className="ir-tab is-active">Output</span>
-              <span className="ir-tab">History</span>
-            </div>
-
-            {runError && (
-              <div className="ir-case" style={{ borderLeft: '4px solid #ef4444' }}>
-                <p className="ir-case-header">
-                  <span style={{ color: '#ef4444' }}>❌ Error</span>
-                </p>
-                <p className="mono muted" style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {runError}
-                </p>
-              </div>
-            )}
-
-            {runResult && (
-              <>
-                <div className="ir-case" style={{ borderLeft: `4px solid ${runResult.result?.status?.id === 3 ? '#4ade80' : '#fbbf24'}` }}>
-                  <p className="ir-case-header">
-                    <span>{runResult.result?.status?.description || 'Result'}</span>
-                    <span style={{ 
-                      color: runResult.result?.status?.id === 3 ? '#4ade80' : runResult.result?.status?.id === 4 ? '#ef4444' : '#fbbf24',
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold'
-                    }}>
-                      {runResult.result?.time ? `${runResult.result.time}s` : '—'}
-                    </span>
-                  </p>
-                  {runResult.result?.stdout && (
-                    <p className="mono" style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#b9ddff', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '4rem', overflow: 'auto' }}>
-                      {runResult.result.stdout}
-                    </p>
-                  )}
-                  {runResult.result?.stderr && (
-                    <p className="mono" style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '2rem', overflow: 'auto' }}>
-                      stderr: {runResult.result.stderr}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-
-            {!runError && !runResult && (
-              <>
-                <div className="ir-case">
-                  <p className="ir-case-header">
-                    <span>Test Case 0</span>
-                    <span className="muted">pending</span>
-                  </p>
-                </div>
-                <div className="ir-case">
-                  <p className="ir-case-header">
-                    <span>Test Case 1</span>
-                    <span style={{ color: 'var(--accent-strong)' }}>pending</span>
-                  </p>
-                </div>
-              </>
-            )}
-          </section>
-
+        {/* RIGHT COLUMN: VIDEO & CHAT */}
+        <aside className="ir-right">
           <VideoPanel
             isCamEnabled={isCamEnabled}
             isMicEnabled={isMicEnabled}
@@ -806,53 +720,30 @@ export default function InterviewRoom() {
             remoteVideoRef={remoteVideoRef}
             onShareScreen={handleShareScreen}
             isScreenSharing={isScreenSharing}
-            />
+          />
 
-          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.4rem' }}>
-            {!isRecording ? (
-              <button className="btn" onClick={handleStartRecording} type="button">Start Recording</button>
-            ) : (
-              <button className="btn btn-danger" onClick={handleStopRecording} type="button">Stop Recording</button>
-            )}
-          </div>
-
-          <section className="card ir-chat-panel">
-            <div className="ir-chat-stream">
+          <section className="ir-chat-section">
+            <div className="ir-chat-header">Shared Chat</div>
+            <div className="ir-chat-messages">
               {messages.map((item) => (
-                <div key={item.id} className="ir-chat-item">
-                  <p className="mono" style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {item.userName}
-                  </p>
-                  <p className="mono" style={{ margin: '0.25rem 0 0', fontSize: '0.82rem' }}>
-                    {item.message}
-                  </p>
+                <div key={item.id} className="ir-msg">
+                  <div className="ir-msg-user">{item.userName}</div>
+                  <div className="ir-msg-text">{item.message}</div>
                 </div>
               ))}
             </div>
-
-            <form className="ir-chat-input-row" onSubmit={handleSendMessage}>
+            <form className="ir-chat-form" onSubmit={handleSendMessage}>
               <input
-                className="input"
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Send a message"
                 value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="Type a message…"
+                className="ir-chat-input"
               />
-              <button className="btn btn-primary" type="submit">
-                Send
-              </button>
+              <button className="btn btn-primary" type="submit">Send</button>
             </form>
           </section>
-
-          <section className="card" style={{ padding: '0.75rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '0.9rem' }}>AI Checklist</h3>
-            <ul className="muted" style={{ margin: 0, paddingLeft: '1rem', lineHeight: 1.6, fontSize: '0.83rem' }}>
-              {aiChecklist.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
         </aside>
-      </div>
-    </section>
+      </main>
+    </div>
   );
 }
