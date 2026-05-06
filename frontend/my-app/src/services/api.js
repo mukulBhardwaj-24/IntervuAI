@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
 
 export async function apiRequest(path, options = {}) {
   const config = {
@@ -12,6 +12,16 @@ export async function apiRequest(path, options = {}) {
 
   if (options.body) {
     config.body = JSON.stringify(options.body);
+  }
+
+  // Attach Authorization header when token is present in localStorage
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (e) {
+    // ignore localStorage errors in some environments
   }
 
   const response = await fetch(`${BASE_URL}${path}`, config);

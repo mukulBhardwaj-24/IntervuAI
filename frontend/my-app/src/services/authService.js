@@ -20,37 +20,60 @@ function hasMockCookie() {
   return document.cookie.includes('session=mock-jwt');
 }
 
+// Always hit the real backend for register/login to ensure real auth flow
 export async function register(payload) {
-  if (USE_MOCK) {
-    setMockSessionCookie();
-    return { user: { ...mockUser, name: payload.name, email: payload.email } };
+  const res = await withTimeout(apiRequest('/api/auth/register', { method: 'POST', body: payload }));
+
+  if (res?.token) {
+    try {
+      localStorage.setItem('token', res.token);
+    } catch (e) {
+      // ignore localStorage write errors
+    }
   }
 
-  return withTimeout(apiRequest('/api/auth/register', { method: 'POST', body: payload }));
+  return res;
 }
 
 export async function login(payload) {
-  if (USE_MOCK) {
-    setMockSessionCookie();
-    return { user: { ...mockUser, email: payload.email } };
+  const res = await withTimeout(apiRequest('/api/auth/login', { method: 'POST', body: payload }));
+
+  if (res?.token) {
+    try {
+      localStorage.setItem('token', res.token);
+    } catch (e) {
+      // ignore localStorage write errors
+    }
   }
 
-  return withTimeout(apiRequest('/api/auth/login', { method: 'POST', body: payload }));
+  return res;
 }
 
 export async function getCurrentUser() {
-  if (USE_MOCK) {
-    if (!hasMockCookie()) {
-      throw new Error('Not authenticated');
-    }
+  // If mock mode and no token present, keep mock behavior for bootstrap
+  try {
+    const token = localStorage.getItem('token');
+    if (!token && USE_MOCK) {
+      if (!hasMockCookie()) {
+        throw new Error('Not authenticated');
+      }
 
-    return { user: mockUser };
+      return { user: mockUser };
+    }
+  } catch (e) {
+    // ignore localStorage access errors and fallthrough to real backend
   }
 
   return withTimeout(apiRequest('/api/auth/me'));
 }
 
 export async function logout() {
+  try {
+    localStorage.removeItem('token');
+  } catch (e) {
+    // ignore
+  }
+
   if (USE_MOCK) {
     clearMockSessionCookie();
     return { success: true };
