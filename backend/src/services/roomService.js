@@ -1,5 +1,6 @@
 import { Room } from '../models/Room.js';
 import { generateRoomId } from '../utils/roomId.js';
+import mongoose from 'mongoose'; // <-- We need this to validate the ID
 
 const MAX_PARTICIPANTS = 2;
 
@@ -9,12 +10,8 @@ function normalizeName(name, fallback) {
 }
 
 function serializeRoom(room) {
-  if (!room) {
-    return null;
-  }
-
+  if (!room) return null;
   const source = typeof room.toObject === 'function' ? room.toObject() : room;
-
   return {
     roomId: source.roomId,
     createdBy: source.createdBy,
@@ -26,6 +23,11 @@ function serializeRoom(room) {
   };
 }
 
+// Helper to check if the ID is a real database ID and not a leftover mock string
+function getValidObjectId(id) {
+  return (id && mongoose.Types.ObjectId.isValid(id)) ? id : null;
+}
+
 export async function createRoom(payload = {}) {
   let roomId = generateRoomId();
 
@@ -34,7 +36,8 @@ export async function createRoom(payload = {}) {
   }
 
   const creatorName = normalizeName(payload.userName, 'Host');
-  const creatorId = payload.userId || `account-${Date.now()}`;
+  // FIX: This completely blocks the old "account-..." strings from crashing the DB
+  const creatorId = getValidObjectId(payload.userId); 
   const participantId = payload.participantId || `participant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const room = await Room.create({
@@ -66,7 +69,8 @@ export async function joinRoom(roomId, payload = {}) {
   }
 
   const userName = normalizeName(payload.userName, 'Guest');
-  const userId = payload.userId || `account-${Date.now()}`;
+  // FIX: Block bad IDs here too
+  const userId = getValidObjectId(payload.userId); 
   const participantId = payload.participantId || `participant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const existing = room.participants.find((person) => person.participantId === participantId);
@@ -92,9 +96,7 @@ export async function leaveRoom(roomId, participantId) {
   const normalizedRoomId = String(roomId || '').toUpperCase();
   const room = await Room.findOne({ roomId: normalizedRoomId, isActive: true });
 
-  if (!room) {
-    return null;
-  }
+  if (!room) return null;
 
   room.participants = room.participants.filter((person) => person.participantId !== participantId);
 
@@ -114,7 +116,6 @@ export async function updateSharedCode(roomId, code) {
     { $set: { code: String(code || '') } },
     { new: true }
   );
-
   return serializeRoom(room);
 }
 
@@ -122,19 +123,14 @@ export async function addMessage(roomId, payload = {}) {
   const normalizedRoomId = String(roomId || '').toUpperCase();
   const room = await Room.findOne({ roomId: normalizedRoomId, isActive: true });
 
-  if (!room) {
-    return null;
-  }
+  if (!room) return null;
 
   const text = String(payload.message || '').trim();
-
-  if (!text) {
-    return null;
-  }
+  if (!text) return null;
 
   const message = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    userId: payload.userId || 'unknown',
+    userId: getValidObjectId(payload.userId), 
     userName: normalizeName(payload.userName, 'Guest'),
     message: text,
     timestamp: new Date().toISOString()
@@ -147,6 +143,5 @@ export async function addMessage(roomId, payload = {}) {
   }
 
   await room.save();
-
   return message;
 }
