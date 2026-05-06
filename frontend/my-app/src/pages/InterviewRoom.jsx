@@ -4,6 +4,7 @@ import ProblemList from '../components/problems/ProblemList';
 import VideoPanel from '../components/room/VideoPanel';
 import { getRoom } from '../services/roomService';
 import { createSocketClient } from '../services/socketClient';
+import { useAuth } from '../context/AuthContext';
 import { runCode } from '../services/runService';
 import { aiChecklist, problems } from '../utils/mockData';
 import './InterviewRoom.css';
@@ -52,7 +53,19 @@ export default function InterviewRoom() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const auth = useAuth();
+  const { user: authUser, isLoading: authLoading } = auth;
+
   const identity = useMemo(() => getClientIdentity(location.state), [location.state]);
+
+  // prefer authenticated user id when available, but do not overwrite participantId
+  const effectiveIdentity = useMemo(() => {
+    const base = { ...identity };
+    if (authUser && (authUser._id || authUser.id)) {
+      base.userId = authUser._id || authUser.id;
+    }
+    return base;
+  }, [identity, authUser]);
 
   const [selected, setSelected] = useState(problems[0]);
   const [participants, setParticipants] = useState([]);
@@ -296,17 +309,32 @@ export default function InterviewRoom() {
   }, [roomId]);
 
   useEffect(() => {
-    const socket = createSocketClient();
+    // Do not start socket until auth bootstrap completes to avoid sending undefined IDs
+    if (authLoading) {
+      return undefined;
+    }
+
+    // include token from localStorage when present for backend socket auth
+    let token = null;
+    try {
+      token = localStorage.getItem('token');
+    } catch (e) {
+      token = null;
+    }
+
+    const socket = createSocketClient(token);
     socketRef.current = socket;
 
     const onConnect = () => {
       setConnectionState('Connected');
       setRoomError('');
+
+      // send both userId (real account id when available) and participantId (tab identity)
       socket.emit('join-room', {
         roomId,
-        userId: identity.userId,
-        participantId: identity.participantId,
-        userName: identity.userName
+        userId: effectiveIdentity.userId,
+        participantId: effectiveIdentity.participantId,
+        userName: effectiveIdentity.userName
       });
     };
 
@@ -441,7 +469,9 @@ export default function InterviewRoom() {
     socket.on('ice-candidate', onIceCandidate);
 
     return () => {
-      socket.emit('leave-room', { roomId });
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('leave-room', { roomId });
+      }
       socket.off('connect', onConnect);
       socket.off('connect_error', onConnectError);
       socket.off('disconnect', onDisconnect);
@@ -459,7 +489,8 @@ export default function InterviewRoom() {
       closePeerConnection();
       stopLocalStream();
     };
-  }, [createPeerConnection, identity.participantId, identity.userId, identity.userName, maybeStartOfferFlow, roomId]);
+  // include authLoading so we re-run when auth bootstrap completes
+  }, [createPeerConnection, effectiveIdentity.participantId, effectiveIdentity.userId, effectiveIdentity.userName, maybeStartOfferFlow, roomId, authLoading]);
 
   useEffect(() => {
     return () => {

@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { Server } from 'socket.io';
 import {
   addMessage,
@@ -15,6 +16,30 @@ export function registerSocketHandlers(httpServer, frontendUrl) {
     }
   });
 
+  // Socket.IO authentication middleware: extract userId from JWT token if present
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) {
+      // Allow anonymous connections (for non-authenticated users)
+      return next();
+    }
+
+    try {
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        return next();
+      }
+
+      const decoded = jwt.verify(token, secret);
+      socket.data.authUserId = decoded.userId; // Extracted ObjectId from JWT
+      socket.data.authUserEmail = decoded.email;
+      next();
+    } catch (error) {
+      // Invalid token: allow connection but mark as unauthenticated
+      return next();
+    }
+  });
+
   io.on('connection', (socket) => {
     function resolveRoomId(payload = {}) {
       return String(payload.roomId || socket.data.roomId || '').toUpperCase();
@@ -29,8 +54,10 @@ export function registerSocketHandlers(httpServer, frontendUrl) {
       }
 
       try {
+        // Prefer authenticated userId from JWT token, fallback to payload
+        const userId = socket.data.authUserId || payload.userId;
         const { room, user } = await joinRoom(roomId, {
-          userId: payload.userId,
+          userId,
           participantId: payload.participantId,
           userName: payload.userName
         });

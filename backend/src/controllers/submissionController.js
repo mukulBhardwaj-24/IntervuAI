@@ -1,8 +1,17 @@
 import Submission from '../models/Submission.js';
+import Problem from '../models/Problem.js';
 
 export async function createSubmission(req, res, next) {
   try {
     const { language, source, stdin = '', problemId = '', result = null } = req.body || {};
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required'
+      });
+    }
 
     if (!language || !source) {
       return res.status(400).json({
@@ -11,12 +20,30 @@ export async function createSubmission(req, res, next) {
       });
     }
 
+    if (!problemId) {
+      return res.status(400).json({
+        success: false,
+        message: 'problemId is required'
+      });
+    }
+
+    // Resolve problemId: lookup Problem by 'id' field to get the MongoDB _id
+    let resolvedProblemId = problemId;
+    try {
+      const problem = await Problem.findOne({ id: problemId });
+      if (problem) {
+        resolvedProblemId = problem._id;
+      }
+    } catch {
+      // If lookup fails, try using problemId as-is (might be an ObjectId already)
+    }
+
     const submission = await Submission.create({
-      userId: req.user?.userId,
+      userId,
       language,
       source,
       stdin,
-      problemId,
+      problemId: resolvedProblemId,
       result
     });
 
@@ -72,8 +99,18 @@ export async function getSubmissionStats(req, res, next) {
   try {
     const { userId } = req.params;
 
+    // Ensure userId is treated as ObjectId in aggregation
+    let userIdFilter = userId;
+    try {
+      // Try to parse as ObjectId if it looks like one
+      const mongoose = await import('mongoose');
+      userIdFilter = new mongoose.Types.ObjectId(userId);
+    } catch {
+      // Fallback to string if not a valid ObjectId
+    }
+
     const stats = await Submission.aggregate([
-      { $match: { userId } },
+      { $match: { userId: userIdFilter } },
       {
         $facet: {
           total: [{ $count: 'count' }],

@@ -19,3 +19,13 @@ export async function requestReview(problemId, code) {
     20000
   );
 }
+
+export async function requestChat(roomId, code, userMessage) {
+  return withTimeout(
+    apiRequest('/api/ai/chat', {
+      method: 'POST',
+      body: { roomId, code, userMessage }
+    }),
+    30000
+  );
+}
