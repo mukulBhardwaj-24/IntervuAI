@@ -7,6 +7,7 @@ import submissionRoutes from './routes/submissionRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import recordingRoutes from './routes/recordingRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 
 export function createApp(frontendUrl) {
@@ -32,6 +33,7 @@ export function createApp(frontendUrl) {
   app.use('/api/analytics', analyticsRoutes);
   app.use('/api/ai', aiRoutes);
   app.use('/api/recordings', recordingRoutes);
+  app.use('/api/auth', authRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -1,5 +1,34 @@
 import Submission from '../models/Submission.js';
 
+export async function createSubmission(req, res, next) {
+  try {
+    const { language, source, stdin = '', problemId = '', result = null } = req.body || {};
+
+    if (!language || !source) {
+      return res.status(400).json({
+        success: false,
+        message: 'language and source are required'
+      });
+    }
+
+    const submission = await Submission.create({
+      userId: req.user?.userId,
+      language,
+      source,
+      stdin,
+      problemId,
+      result
+    });
+
+    return res.status(201).json({
+      success: true,
+      submission
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function getUserSubmissions(req, res, next) {
   try {
     const { userId } = req.params;
